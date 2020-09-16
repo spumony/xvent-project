@@ -1,3 +1,4 @@
 {
+  "jwtSecret": "mysecrettoken",
   "mongoURI": "mongodb+srv://alex123:445928@cluster0.olcxv.mongodb.net/xvent-db?retryWrites=true&w=majority"
 }
