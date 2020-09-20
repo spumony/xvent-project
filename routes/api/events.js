@@ -6,9 +6,17 @@ const auth = require('../../middleware/auth');
 const Event = require('../../models/Event');
 
 // @route   GET api/events
-// @desc    Test route
+// @desc    Get all events
 // @access  Public
-router.get('/', (req, res) => {});
+router.get('/', async (req, res) => {
+  try {
+    const events = await Event.find();
+    res.json(events);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
 // @route   POST api/events
 // @desc    Create event
@@ -60,17 +68,6 @@ router.post(
     try {
       let event = await Event.findOne({ user: req.user.id });
 
-      if (event) {
-        // Update
-        event = await Event.findOneAndUpdate(
-          { user: req.user.id },
-          { $set: eventFields },
-          { new: true }
-        );
-
-        return res.json(event);
-      }
-
       // Create
       event = new Event(eventFields);
 
@@ -82,5 +79,28 @@ router.post(
     }
   }
 );
+
+// @route   GET api/events/:id
+// @desc    Get event by ID
+// @access  Public
+router.get('/:id', async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ msg: 'Event not found' });
+    }
+
+    res.json(event);
+  } catch (err) {
+    console.error(err.message);
+
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Event not found' });
+    }
+
+    res.status(500).send('Server Error');
+  }
+});
 
 module.exports = router;
