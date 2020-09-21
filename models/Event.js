@@ -14,12 +14,12 @@ const EventSchema = new Schema({
     type: String,
     required: true,
   },
-  date_start: {
+  dateStart: {
     type: Date,
     default: Date.now,
     required: true,
   },
-  date_end: {
+  dateEnd: {
     type: Date,
     required: true,
   },
@@ -37,6 +37,25 @@ const EventSchema = new Schema({
   image: {
     type: String,
   },
+  participants: [
+    {
+      name: {
+        type: String,
+        required: true,
+      },
+      phone: {
+        type: String,
+        required: true,
+      },
+      shortId: {
+        type: String,
+      },
+      status: {
+        type: String,
+        default: 'pending',
+      },
+    },
+  ],
   date: {
     type: Date,
     default: Date.now,

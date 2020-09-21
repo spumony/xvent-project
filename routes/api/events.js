@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const shortid = require('shortid');
 const { check, validationResult } = require('express-validator');
 const auth = require('../../middleware/auth');
 
@@ -28,8 +29,8 @@ router.post(
     [
       check('title', 'Title is required').notEmpty(),
       check('description', 'Description is required').notEmpty(),
-      check('date_start', 'Start date is required').notEmpty(),
-      check('date_end', 'End date is required').notEmpty(),
+      check('dateStart', 'Start date is required').notEmpty(),
+      check('dateEnd', 'End date is required').notEmpty(),
       check('type', 'Type is required').notEmpty(),
       check('location', 'Location is required').notEmpty(),
     ],
@@ -43,8 +44,8 @@ router.post(
     const {
       title,
       description,
-      date_start,
-      date_end,
+      dateStart,
+      dateEnd,
       type,
       location,
       website,
@@ -57,8 +58,8 @@ router.post(
     eventFields.user = req.user.id;
     if (title) eventFields.title = title;
     if (description) eventFields.description = description;
-    if (date_start) eventFields.date_start = date_start;
-    if (date_end) eventFields.date_end = date_end;
+    if (dateStart) eventFields.dateStart = dateStart;
+    if (dateEnd) eventFields.dateEnd = dateEnd;
     if (type) eventFields.type = type;
     if (location) eventFields.location = location;
     if (website) eventFields.website = website;
@@ -102,5 +103,52 @@ router.get('/:id', async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+// @route   POST api/events/:id
+// @desc    Registration on event
+// @access  Public
+router.post(
+  '/:id',
+  [
+    check('name', 'Name is required').notEmpty(),
+    check('phone', 'Phone number is required').notEmpty(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Create unique code for participant
+    const shortId = shortid.generate();
+
+    const newParticipant = {
+      name: req.body.name,
+      phone: req.body.phone,
+      shortId,
+    };
+
+    try {
+      const event = await Event.findById(req.params.id);
+      const participant = await Event.find({
+        'participants.phone': req.body.phone,
+      });
+
+      // Check if participant exists
+      if (participant.length > 0) {
+        return res.status(200).send('You are already registred');
+      }
+
+      // Add participant to collection and save
+      event.participants.push(newParticipant);
+      await event.save();
+
+      res.status(200).send(shortId);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  }
+);
 
 module.exports = router;
