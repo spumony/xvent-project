@@ -5,6 +5,7 @@ const { check, validationResult } = require('express-validator');
 const auth = require('../../middleware/auth');
 
 const Event = require('../../models/Event');
+const User = require('../../models/User');
 
 // @route   GET api/events
 // @desc    Get all events
@@ -15,6 +16,56 @@ router.get('/', async (req, res) => {
     res.json(events);
   } catch (err) {
     console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET api/events/:id
+// @desc    Get event by ID
+// @access  Public
+router.get('/id/:id', async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ msg: 'Event not found' });
+    }
+
+    res.json(event);
+  } catch (err) {
+    console.error(err.message);
+
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Event not found' });
+    }
+
+    res.status(500).send('Server Error');
+  }
+});
+
+// @route   GET api/events/:id
+// @desc    Get all event participants
+// @access  Private
+router.get('/id/:id/participants', auth, async (req, res) => {
+  try {
+    const participants = await Event.find(
+      {
+        _id: req.params.id,
+        user: req.user.id,
+      },
+      {
+        participants: 1,
+      }
+    );
+
+    res.json(participants);
+  } catch (err) {
+    console.error(err.message);
+
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ msg: 'Event not found' });
+    }
+
     res.status(500).send('Server Error');
   }
 });
@@ -81,34 +132,11 @@ router.post(
   }
 );
 
-// @route   GET api/events/:id
-// @desc    Get event by ID
-// @access  Public
-router.get('/:id', async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.id);
-
-    if (!event) {
-      return res.status(404).json({ msg: 'Event not found' });
-    }
-
-    res.json(event);
-  } catch (err) {
-    console.error(err.message);
-
-    if (err.kind === 'ObjectId') {
-      return res.status(404).json({ msg: 'Event not found' });
-    }
-
-    res.status(500).send('Server Error');
-  }
-});
-
 // @route   POST api/events/:id
 // @desc    Registration on event
 // @access  Public
 router.post(
-  '/:id',
+  '/id/:id',
   [
     check('name', 'Name is required').notEmpty(),
     check('phone', 'Phone number is required').notEmpty(),
@@ -131,6 +159,7 @@ router.post(
     try {
       const event = await Event.findById(req.params.id);
       const participant = await Event.find({
+        _id: req.params.id,
         'participants.phone': req.body.phone,
       });
 
@@ -144,6 +173,88 @@ router.post(
       await event.save();
 
       res.status(200).send(shortId);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  }
+);
+
+// @route   POST api/events/status
+// @desc    Check registration status
+// @access  Public
+router.post(
+  '/status',
+  [check('shortId', 'Registration code is required').notEmpty()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
+      const event = await Event.find({
+        'participants.shortId': req.body.shortId,
+      });
+
+      // Check if participant exists
+      if (event.length === 0) {
+        return res.status(404).send('Wrong registration code');
+      }
+
+      const getStatus = event[0].participants.filter((p) => {
+        if (p.shortId === req.body.shortId) {
+          return p;
+        }
+      });
+
+      const status = {
+        name: getStatus[0].name,
+        phone: getStatus[0].phone,
+        shortId: getStatus[0].shortId,
+        status: getStatus[0].status,
+      };
+
+      res.status(200).send(status);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('Server Error');
+    }
+  }
+);
+
+// @route   PUT api/events/id/:id/participants
+// @desc    Edit participant's status
+// @access  Private
+router.put(
+  '/id/:id/participants',
+  [
+    auth,
+    check('status', 'Status is required').notEmpty(),
+    check('shortId', 'Participant id is required').notEmpty(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        errors: errors.array(),
+      });
+    }
+
+    try {
+      const participant = await Event.updateOne(
+        {
+          user: req.user.id,
+          _id: req.params.id,
+          'participants.shortId': req.body.shortId,
+        },
+        {
+          $set: { 'participants.$.status': 'test2' },
+        }
+      );
+      console.log(req.user.id);
+
+      res.json(participant);
     } catch (err) {
       console.error(err.message);
       res.status(500).send('Server Error');
