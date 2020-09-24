@@ -4,6 +4,8 @@ const auth = require('../../middleware/auth');
 const { check, validationResult } = require('express-validator');
 
 const Profile = require('../../models/Profile');
+const User = require('../../models/User');
+const Post = require('../../models/Post');
 
 // @route   GET api/profile/me
 // @desc    Get current users profile
@@ -35,6 +37,7 @@ router.post(
     [
       check('status', 'Status is required').notEmpty(),
       check('location', 'Location is required').notEmpty(),
+      check('interests', 'Interests is required').notEmpty(),
     ],
   ],
   async (req, res) => {
@@ -47,6 +50,7 @@ router.post(
       company,
       website,
       location,
+      interests,
       status,
       bio,
       youtube,
@@ -62,6 +66,7 @@ router.post(
     if (company) profileFields.company = company;
     if (website) profileFields.website = website;
     if (location) profileFields.location = location;
+    if (interests) profileFields.interests = interests;
     if (status) profileFields.status = status;
     if (bio) profileFields.bio = bio;
 
@@ -138,7 +143,8 @@ router.get('/user/:user_id', async (req, res) => {
 // @access  Private
 router.delete('/', auth, async (req, res) => {
   try {
-    // @todo - remove users posts
+    // Remove users posts
+    await Post.deleteMany({ user: req.user.id });
 
     // Delete profile
     await Profile.findOneAndRemove({ user: req.user.id });

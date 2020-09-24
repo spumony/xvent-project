@@ -20,6 +20,19 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route   GET api/events/m
+// @desc    Get all user's events
+// @access  Private
+router.get('/m', auth, async (req, res) => {
+  try {
+    const events = await Event.find({ user: req.user.id });
+    res.json(events);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
 // @route   GET api/events/:id
 // @desc    Get event by ID
 // @access  Public
@@ -335,5 +348,29 @@ router.put(
     }
   }
 );
+
+// @route   DELETE api/events
+// @desc    Delete event
+// @access  Private
+router.delete('/id/:id', auth, async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.id);
+
+    // Check if user created event
+    if (req.user.id == event.user) {
+      // Delete event
+      await Event.findOneAndRemove({
+        user: req.user.id,
+        _id: req.params.id,
+      });
+      return res.json({ msg: 'Event deleted' });
+    }
+
+    res.json({ msg: 'It is NOT your event' });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+});
 
 module.exports = router;

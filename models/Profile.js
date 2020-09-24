@@ -16,6 +16,10 @@ const ProfileSchema = new Schema({
     type: String,
     required: true,
   },
+  interests: {
+    type: Array,
+    required: true,
+  },
   status: {
     type: String,
     required: true,
