@@ -54,6 +54,14 @@ router.post(
       facebook,
       linkedin,
       instagram,
+      type1,
+      type2,
+      type3,
+      type4,
+      checkbox_party,
+      checkbox_cinema,
+      checkbox_theatre,
+      checkbox_concert,
     } = req.body;
 
     // Build profile object
@@ -72,6 +80,13 @@ router.post(
     if (facebook) profileFields.social.facebook = facebook;
     if (linkedin) profileFields.social.linkedin = linkedin;
     if (instagram) profileFields.social.instagram = instagram;
+
+    // Build social object
+    profileFields.types = {};
+    if (type1) profileFields.types.type1 = type1;
+    if (type2) profileFields.types.type2 = type2;
+    if (type3) profileFields.types.type3 = type3;
+    if (type4) profileFields.types.type4 = type4;
 
     try {
       let profile = await Profile.findOne({ user: req.user.id });

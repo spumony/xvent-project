@@ -39,6 +39,20 @@ const ProfileSchema = new mongoose.Schema({
       type: String,
     },
   },
+  types: {
+    type1: {
+      type: String,
+    },
+    type2: {
+      type: String,
+    },
+    type3: {
+      type: String,
+    },
+    type4: {
+      type: String,
+    },
+  },
   date: {
     type: Date,
     default: Date.now,
