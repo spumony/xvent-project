@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../../middleware/auth');
+const { check, validationResult } = require('express-validator');
+
+const Event = require('../../models/Event');
+const User = require('../../models/User');
 
 // @route   GET api/events
-<<<<<<< Updated upstream
-// @desc    Test route
-// @access  Public
-router.get('/', (req, res) => res.send('Events route'));
-=======
 // @desc    Get all events
 // @access  Public
 router.get('/', async (req, res) => {
@@ -377,6 +377,5 @@ router.delete('/id/:id', auth, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
->>>>>>> Stashed changes
 
 module.exports = router;
